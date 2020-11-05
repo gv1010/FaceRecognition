@@ -19,7 +19,28 @@ from datetime import date, datetime
 # specific demo. If you have trouble installing it, try any of the other demos that don't require it instead.
 
 # Get a reference to webcam #0 (the default one)
-video_capture = cv2.VideoCapture(0)
+def gstreamer_pipeline(capture_width=3280, capture_height=2464, display_width=820, display_height=616, framerate=21, flip_method=0):
+    return (
+        "nvarguscamerasrc ! "
+        "video/x-raw(memory:NVMM), "
+        "width=(int)%d, height=(int)%d, "
+        "format=(string)NV12, framerate=(fraction)%d/1 ! "
+        "nvvidconv flip-method=%d ! "
+        "video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! "
+        "videoconvert ! "
+        "video/x-raw, format=(string)BGR ! appsink"
+        % (
+            capture_width,
+            capture_height,
+            framerate,
+            flip_method,
+            display_width,
+            display_height,
+        )
+    )
+
+
+video_capture = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
 # Load a sample picture and learn how to recognize it.
 #obama_image = face_recognition.load_image_file("2.jpg")
 #obama_face_encoding = face_recognition.face_encodings(obama_image)[0]
@@ -32,7 +53,7 @@ video_capture = cv2.VideoCapture(0)
 known_face_encodings = []
 known_face_names = []
 
-imagePaths = list(paths.list_images("E:\\Turiya\\FaceRecog\\development\\dataset"))
+imagePaths = list(paths.list_images("\\dataset"))
 print(imagePaths[-1])
 
 knownEncodings = []
@@ -60,8 +81,8 @@ face_locations = []
 face_encodings = []
 face_names = []
 process_this_frame = True
-payment_update = pd.read_csv("E:\\Turiya\\FaceRecog\\development\\payment\\Payment Update.csv")
-mark_attendence = pd.read_csv("E:\\Turiya\\FaceRecog\\development\\mark attendence\\Mark Attendence.csv")
+payment_update = pd.read_csv("\\payment\\Payment Update.csv")
+mark_attendence = pd.read_csv("\\mark attendence\\Mark Attendence.csv")
 time_capture = []
 
 while True:
@@ -112,7 +133,7 @@ while True:
 
 				print(payment_row["daysCount"].values[0], payment_row["feesPaid"].values[0])
 				#Creates csv file and appends the datetimestamp
-				with open("E:\\Turiya\\FaceRecog\\development\\dataset\\"+ name + "\\record\\" +str(date.today().day)+ str(date.today().month)+ str(date.today().year)+".csv", "a") as f:
+				with open("\\dataset\\"+ name + "\\record\\" +str(date.today().day)+ str(date.today().month)+ str(date.today().year)+".csv", "a") as f:
 					write = csv.writer(f)
 					now = datetime.now()
 					date_time = now.strftime("%m/%d/%Y, %H:%M:%S")

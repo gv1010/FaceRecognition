@@ -12,7 +12,29 @@ while name == "":
 	except:
 		print("choose a different name")
 		name = ""
-cam = cv2.VideoCapture(0)
+		
+		
+def gstreamer_pipeline(capture_width=3280, capture_height=2464, display_width=820, display_height=616, framerate=21, flip_method=0):
+    return (
+        "nvarguscamerasrc ! "
+        "video/x-raw(memory:NVMM), "
+        "width=(int)%d, height=(int)%d, "
+        "format=(string)NV12, framerate=(fraction)%d/1 ! "
+        "nvvidconv flip-method=%d ! "
+        "video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! "
+        "videoconvert ! "
+        "video/x-raw, format=(string)BGR ! appsink"
+        % (
+            capture_width,
+            capture_height,
+            framerate,
+            flip_method,
+            display_width,
+            display_height,
+        )
+    )
+
+cam = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
 
 cv2.namedWindow("test")
 
@@ -32,7 +54,7 @@ while True:
 		break
 	elif k%256 == 32:
 		# SPACE pressed
-		img_name = "/opencv_frame_{}.png".format(img_counter)
+		img_name = "/image_capture_{}.png".format(img_counter)
 		img_path = path + img_name
 		print(img_path)
 		print("saving...",img_name )
