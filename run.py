@@ -8,7 +8,7 @@ import pandas as pd
 import csv
 from datetime import date, datetime
 
-
+import pickle
 # This is a demo of running face recognition on live video from your webcam. It's a little more complicated than the
 # other example, but it includes some basic performance tweaks to make things run a lot faster:
 #   1. Process each video frame at 1/4 resolution (though still display it at full resolution)
@@ -20,27 +20,28 @@ from datetime import date, datetime
 
 # Get a reference to webcam #0 (the default one)
 def gstreamer_pipeline(capture_width=3280, capture_height=2464, display_width=820, display_height=616, framerate=21, flip_method=0):
-    return (
-        "nvarguscamerasrc ! "
-        "video/x-raw(memory:NVMM), "
-        "width=(int)%d, height=(int)%d, "
-        "format=(string)NV12, framerate=(fraction)%d/1 ! "
-        "nvvidconv flip-method=%d ! "
-        "video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! "
-        "videoconvert ! "
-        "video/x-raw, format=(string)BGR ! appsink"
-        % (
-            capture_width,
-            capture_height,
-            framerate,
-            flip_method,
-            display_width,
-            display_height,
-        )
-    )
+	return (
+		"nvarguscamerasrc ! "
+		"video/x-raw(memory:NVMM), "
+		"width=(int)%d, height=(int)%d, "
+		"format=(string)NV12, framerate=(fraction)%d/1 ! "
+		"nvvidconv flip-method=%d ! "
+		"video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! "
+		"videoconvert ! "
+		"video/x-raw, format=(string)BGR ! appsink"
+		% (
+			capture_width,
+			capture_height,
+			framerate,
+			flip_method,
+			display_width,
+			display_height,
+		)
+	)
 
 
-video_capture = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
+#video_capture = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
+
 # Load a sample picture and learn how to recognize it.
 #obama_image = face_recognition.load_image_file("2.jpg")
 #obama_face_encoding = face_recognition.face_encodings(obama_image)[0]
@@ -50,39 +51,31 @@ video_capture = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
 #biden_face_encoding = face_recognition.face_encodings(biden_image)[0]
 
 # Create arrays of known face encodings and their names
-known_face_encodings = []
-known_face_names = []
 
-imagePaths = list(paths.list_images("\\dataset"))
-print(imagePaths[-1])
 
-knownEncodings = []
-knownNames = []
+# pickle_in = open("dict.pickle","rb")
+# example_dict = pickle.load(pickle_in)
+cwd = os.getcwd()
+def lastModifiedPickle(path):
+	files = os.listdir(path)
+	paths = [os.path.join(path, basename) for basename in files]
+	return max(paths, key=os.path.getctime)
 
-for (i, imagePath) in enumerate(imagePaths):
-	name = imagePath.split(os.path.sep)[-2]
-	ext = imagePath.split(os.path.sep)[-1]
-	print(imagePath)
-	if ext.split(".")[-1].lower() in ["jpg", 'png', 'jpeg']:
-		f_image = face_recognition.load_image_file(imagePath)
-		faces_encoding = face_recognition.face_encodings(f_image)
-		#print(imagePath, faces_encoding)
-		#break
-		try:
-			knownEncodings.append(faces_encoding[0])
-			knownNames.append(name)
-		except:
-			pass
-
-known_face_encodings = knownEncodings
-known_face_names = knownNames
+encodingsPath = cwd + "\\nameface_serialize"
+newencodePath =  lastModifiedPickle(encodingsPath)
+#print(newencodePath)
+pickle_in = open(newencodePath,"rb")
+unzip = pickle.load(pickle_in)
+known_face_names, known_face_encodings, ids = unzip
+print(ids)
+video_capture = cv2.VideoCapture(0)
 # Initialize some variables
 face_locations = []
 face_encodings = []
 face_names = []
 process_this_frame = True
-payment_update = pd.read_csv("\\payment\\Payment Update.csv")
-mark_attendence = pd.read_csv("\\mark attendence\\Mark Attendence.csv")
+payment_update = pd.read_csv(cwd + "\\payment\\Payment Update.csv")
+mark_attendence = pd.read_csv(cwd + "\\mark attendence\\Mark Attendence.csv")
 time_capture = []
 
 while True:
@@ -107,44 +100,32 @@ while True:
 			# See if the face is a match for the known face(s)
 			matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
 			name = "Unknown"
-
-			# # If a match was found in known_face_encodings, just use the first one.
-			# if True in matches:
-			#     first_match_index = matches.index(True)
-			#     name = known_face_names[first_match_index]
-			# Or instead, use the known face with the smallest distance to the new face.
-
 			face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
 			best_match_index = np.argmin(face_distances)
-			# try:
-			# 	record = pd.read_csv("E:\\Turiya\\FaceRecog\\dataset\\"+ name + "\\record\\" +str(date.today().day)+ str(date.today().month)+ str(date.today().year)+".csv")
-			#
-			# 	now = datetime.now()
-			# 	date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
-			# 	record = record.append([id, date_time])
-			# except:
+
 
 			if matches[best_match_index]:
+				id = ids[best_match_index]
 				name = known_face_names[best_match_index]
-				payment_row = payment_update[payment_update["name"] == name]
+				payment_row = payment_update[payment_update["id"] == id]
 				#print(row)
 				time_capture.append(time.time())
 				#attendence_row = mark_attendence[mark_attendence[""]]
 
 				print(payment_row["daysCount"].values[0], payment_row["feesPaid"].values[0])
 				#Creates csv file and appends the datetimestamp
-				with open("\\dataset\\"+ name + "\\record\\" +str(date.today().day)+ str(date.today().month)+ str(date.today().year)+".csv", "a") as f:
+				with open(cwd + "\\dataset\\"+ id + "\\record\\" +str(date.today().day)+ str(date.today().month)+ str(date.today().year)+".csv", "a") as f:
 					write = csv.writer(f)
 					now = datetime.now()
 					date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
 					print(date_time)
-					write.writerow([name, date_time])
-
+					write.writerow([id, date_time])
 
 				if payment_row["feesPaid"].values[0].lower() == "no":
 					print("Hi", name, "!", "Please clear your dues.")
 					alert = "Pending Dues !"
 					name = alert
+
 			face_names.append(name)
 	process_this_frame = not process_this_frame
 

@@ -1,19 +1,26 @@
 import cv2
 import os
-name = ""
-while name == "":
+import time
+import pandas as pd
+import csv
 
-	name = input("Give your name: ")
+def createPath(name):
+	cwd = os.getcwd()
+	id_df = pd.read_csv(cwd + "\\id_gen_db\\id_db.csv")
+	if id_df.empty:
+		with open(cwd + "\\id_gen_db\\id_db.csv", "a") as f:
+			write = csv.writer(f)
+			write.writerow([100, "admin"])
+
+	lastrow = id_df.iloc[-1]
+	id_no = int(lastrow["id"]) + 1
 	parent_dir = "dataset/"
-	path = parent_dir + name #+ id of a person
-	try:
-		os.mkdir(path)
-		os.mkdir(path + "/record")
-	except:
-		print("choose a different name")
-		name = ""
-		
-		
+	id = "LA_" + str(id_no)
+	path = parent_dir + id#+ id of a person
+	return id_no, path
+	
+
+
 def gstreamer_pipeline(capture_width=3280, capture_height=2464, display_width=820, display_height=616, framerate=21, flip_method=0):
     return (
         "nvarguscamerasrc ! "
@@ -33,34 +40,47 @@ def gstreamer_pipeline(capture_width=3280, capture_height=2464, display_width=82
             display_height,
         )
     )
+def imageCapture(img_count = 6, timecounter = 20):
+	cwd = os.getcwd()
+	name = input("Please enter the name: ")
+	id, path = createPath(name)
+	start = time.time()
+	try:
+		os.mkdir(path)
+		os.mkdir(path + "/record")
+	except:
+		pass
 
-cam = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
+	cam = cv2.VideoCapture(0)
+	cv2.namedWindow("test")
+	img_counter = 0
 
-cv2.namedWindow("test")
+	while time.time()-start <= timecounter:
+		k = cv2.waitKey(1)
+		ret, frame = cam.read()
+		if not ret:
+			print("Failed to grab frame")
+			break
+		cv2.imshow("test", frame)
 
-img_counter = 0
+		if k == ord('s'):
+			# key s pressed to save image
+			img_name = "/"+ name +"_{}.png".format(img_counter)
+			img_path = path + img_name
+			print(img_path)
+			print("saving...",img_name )
+			cv2.imwrite(img_path, frame)
+			print("{} saved!".format(img_name))
+			img_counter += 1
 
-while True:
-	ret, frame = cam.read()
-	if not ret:
-		print("failed to grab frame")
-		break
-	cv2.imshow("test", frame)
-
-	k = cv2.waitKey(1)
-	if k%256 == 27:
-		# ESC pressed
-		print("Escape hit, closing...")
-		break
-	elif k%256 == 32:
-		# SPACE pressed
-		img_name = "/image_capture_{}.png".format(img_counter)
-		img_path = path + img_name
-		print(img_path)
-		print("saving...",img_name )
-		cv2.imwrite(img_path, frame)
-		print("{} written!".format(img_name))
-		img_counter += 1
-
-cam.release()
-cv2.destroyAllWindows()
+		if img_counter == img_count:
+			with open(cwd + "\\id_gen_db\\id_db.csv", "a") as f:
+				write = csv.writer(f)
+				write.writerow([id, name])
+				print("User Id:", id)
+				print("User Name:", name)
+				print("Record added successfully..!")
+			break
+	cam.release()
+	cv2.destroyAllWindows()
+imageCapture()

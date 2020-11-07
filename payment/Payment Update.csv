@@ -1,3 +1,4 @@
 id,name,feesPaid,daysCount
-1,chiru,Yes,30
-2,gv,Yes,30
+LA_101,chiru,No,25
+LA_102,gv,Yes,30
+LA_103,sai,Yes,30
