@@ -4,7 +4,23 @@ import time
 import pandas as pd
 import csv
 
+
+
 def createPath(name):
+	
+	"""
+	Takes the username as input,  checks the last record in the id_db csv file
+	creates a new id in the LA_{number}, format and adds the id along with name 
+	in the id_db csv file
+	
+	Args:      
+		name:       username
+	Return:
+		id_no:      id created 
+		path:       a new folder will be created in the dataset folder with id 
+					as name
+	"""
+	
 	cwd = os.getcwd()
 	id_df = pd.read_csv(cwd + "\\id_gen_db\\id_db.csv")
 	if id_df.empty:
@@ -22,6 +38,11 @@ def createPath(name):
 
 
 def gstreamer_pipeline(capture_width=3280, capture_height=2464, display_width=820, display_height=616, framerate=21, flip_method=0):
+
+
+	"""
+	not in the flow as of now
+	"""
     return (
         "nvarguscamerasrc ! "
         "video/x-raw(memory:NVMM), "
@@ -41,6 +62,20 @@ def gstreamer_pipeline(capture_width=3280, capture_height=2464, display_width=82
         )
     )
 def imageCapture(img_count = 6, timecounter = 20):
+	"""
+	It prompts and ask the user to input username, creates folder with id, inside
+	this folder it creates a record folder, a camera opens for 20 secs, and in this period 
+	by pressing a spacebar, the admin will capture atmost 6 pics of the user, these 
+	snaps will be stored folder created with the id.
+	
+	Args:
+		img_count:		default value 6 images will be captured.
+		timecounter:	exits the function and closes the camera after 20 seconds
+		
+	Return:
+		None
+	
+	"""
 	cwd = os.getcwd()
 	name = input("Please enter the name: ")
 	id, path = createPath(name)

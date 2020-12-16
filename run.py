@@ -7,18 +7,15 @@ import time
 import pandas as pd
 import csv
 from datetime import date, datetime
-
 import pickle
-# This is a demo of running face recognition on live video from your webcam. It's a little more complicated than the
-# other example, but it includes some basic performance tweaks to make things run a lot faster:
-#   1. Process each video frame at 1/4 resolution (though still display it at full resolution)
-#   2. Only detect faces in every other frame of video.
 
-# PLEASE NOTE: This example requires OpenCV (the `cv2` library) to be installed only to read from your webcam.
-# OpenCV is *not* required to use the face_recognition library. It's only required if you want to run this
-# specific demo. If you have trouble installing it, try any of the other demos that don't require it instead.
+"""
+This file runs loads the trained pickle file, opens the camera, when the users face is detected,
+then current time will be updated in the users specific record sub folder, and stored in csv
+format.
+"""
 
-# Get a reference to webcam #0 (the default one)
+
 def gstreamer_pipeline(capture_width=3280, capture_height=2464, display_width=820, display_height=616, framerate=21, flip_method=0):
 	return (
 		"nvarguscamerasrc ! "
@@ -57,6 +54,16 @@ def gstreamer_pipeline(capture_width=3280, capture_height=2464, display_width=82
 # example_dict = pickle.load(pickle_in)
 cwd = os.getcwd()
 def lastModifiedPickle(path):
+	"""
+	Takes path as input looks for the last modified file in the path
+	and return the latest updated path.
+	
+	Args:
+		path:		nameface_serialize directory path
+		
+	Returns:
+		latest updated file in the directory
+	"""
 	files = os.listdir(path)
 	paths = [os.path.join(path, basename) for basename in files]
 	return max(paths, key=os.path.getctime)
@@ -98,10 +105,12 @@ while True:
 		face_names = []
 		for face_encoding in face_encodings:
 			# See if the face is a match for the known face(s)
+			s = time.time()
 			matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
 			name = "Unknown"
 			face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
 			best_match_index = np.argmin(face_distances)
+			print(time.time() - s, process_this_frame)
 
 
 			if matches[best_match_index]:

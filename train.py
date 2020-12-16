@@ -9,6 +9,15 @@ import pickle
 
 class Encoder:
 	def createEncoding():
+		"""
+		When the user is added or deleted, we run this function, to encode the faces or delete the deleted users encodings.
+		As the number of users increases, this function will take a lot of time to finish the encoding.
+		
+		Args:
+					None
+		Returns:
+					returns the newly created a faceencoded pickle file
+		"""
 
 		cwd = os.getcwd()
 		imagePaths = list(paths.list_images(cwd + "\\dataset"))
